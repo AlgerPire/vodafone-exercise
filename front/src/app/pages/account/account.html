@@ -1,0 +1,83 @@
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Dashboard</p>
+    <h1>{{ customer()?.name || 'Your account' }}</h1>
+  </div>
+  <button class="button ghost" type="button" (click)="signOut()">Sign out</button>
+</section>
+
+@if (banner(); as text) {
+  <p class="banner warn" role="alert">{{ text }}</p>
+}
+@if (notice(); as text) {
+  <p class="banner ok" role="status">{{ text }}</p>
+}
+
+@if (loading()) {
+  <p class="hint">Loading your account…</p>
+} @else if (customer(); as person) {
+  <div class="split">
+    <div class="stack">
+      <form class="card stack" [formGroup]="nameForm" novalidate (submit)="$event.preventDefault(); saveName()">
+        <h2>Name</h2>
+        <p class="hint">{{ person.email }}</p>
+        <label for="name">Display name</label>
+        <input id="name" type="text" formControlName="name" maxlength="160" autocomplete="name" />
+        @if (nameError(); as text) {
+          <p class="field-error">{{ text }}</p>
+        }
+        <button class="button" type="submit" [disabled]="savingName()">
+          {{ savingName() ? 'Saving…' : 'Save name' }}
+        </button>
+      </form>
+
+      <form class="card stack" [formGroup]="passwordForm" novalidate (submit)="$event.preventDefault(); savePassword()">
+        <h2>Password</h2>
+        <label for="currentPassword">Current password</label>
+        <app-password-field inputId="currentPassword" formControlName="currentPassword" autocomplete="current-password" [required]="true" />
+        @if (passwordError('currentPassword'); as text) {
+          <p class="field-error">{{ text }}</p>
+        }
+
+        <label for="newPassword">New password</label>
+        <app-password-field
+          inputId="newPassword"
+          formControlName="newPassword"
+          autocomplete="new-password"
+          [minLength]="12"
+          [maxLength]="128"
+          [required]="true"
+        />
+        <p class="hint">12 to 128 characters.</p>
+        @if (passwordError('newPassword'); as text) {
+          <p class="field-error">{{ text }}</p>
+        }
+
+        <label for="confirmPassword">Confirm new password</label>
+        <app-password-field inputId="confirmPassword" formControlName="confirmPassword" autocomplete="new-password" [required]="true" />
+        @if (passwordError('confirmPassword'); as text) {
+          <p class="field-error">{{ text }}</p>
+        }
+
+        <button class="button" type="submit" [disabled]="savingPassword()">
+          {{ savingPassword() ? 'Updating…' : 'Change password' }}
+        </button>
+      </form>
+    </div>
+
+    <aside class="card stack">
+      <h2>Close account</h2>
+      <p>This signs you out and blocks future sign-in. An administrator can turn the account back on.</p>
+      @if (!confirmClose()) {
+        <button class="button danger" type="button" (click)="confirmClose.set(true)">Close account</button>
+      } @else {
+        <div class="actions">
+          <button class="button danger" type="button" (click)="closeAccount()" [disabled]="closing()">
+            {{ closing() ? 'Closing…' : 'Confirm close' }}
+          </button>
+          <button class="button ghost" type="button" (click)="confirmClose.set(false)">Cancel</button>
+        </div>
+      }
+    </aside>
+  </div>
+}

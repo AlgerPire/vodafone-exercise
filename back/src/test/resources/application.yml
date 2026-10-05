@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:customers;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  mail:
+    host: localhost
+    port: 1025
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080
+app:
+  mail:
+    enabled: false
+    from: no-reply@example.com
+    verification-base-url: http://localhost:8080/api/v1/auth/verify-email
+  admin:
+    email: ''
+    password: ''
+    name: Test Admin
+    photo-url: https://example.com/admin.jpg

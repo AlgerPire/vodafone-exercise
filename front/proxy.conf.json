@@ -1,0 +1,44 @@
+{
+  "/api": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "xfwd": true
+  },
+  "/oauth2": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "xfwd": true
+  },
+  "/.well-known": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "xfwd": true
+  },
+  "/session-login": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "xfwd": true
+  },
+  "/session-logout": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "xfwd": true
+  },
+  "/csrf": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "xfwd": true
+  },
+  "/actuator": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "xfwd": true
+  }
+}

@@ -1,0 +1,21 @@
+# Copy to application-local.yml (gitignored) to override local SMTP settings.
+# Leave this file out and mail stays disabled; verification links are logged instead.
+
+spring:
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: you@example.com
+    password: "set-a-local-app-password"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+app:
+  mail:
+    enabled: true
+    from: you@example.com

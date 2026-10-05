@@ -1,0 +1,61 @@
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>Customers</h1>
+  </div>
+  @if (page(); as current) {
+    <p class="hint">{{ current.totalElements }} total</p>
+  }
+</section>
+
+@if (banner(); as text) {
+  <p class="banner warn" role="alert">{{ text }}</p>
+}
+@if (loading()) {
+  <p class="hint">Loading customers…</p>
+} @else if (page(); as current) {
+  @if (current.empty) {
+    <p class="card">No customers on this page.</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Email verified</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (customer of current.content; track customer.id) {
+            <tr>
+              <td><a [routerLink]="['/admin/customers', customer.id]">{{ customer.name }}</a></td>
+              <td>{{ customer.email }}</td>
+              <td><span class="pill">{{ customer.role }}</span></td>
+              <td>
+                <span class="pill" [class.off]="!customer.active">
+                  {{ customer.active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>{{ customer.emailVerified ? 'Yes' : 'No' }}</td>
+              <td>{{ customer.createdAt | date: 'medium' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <div class="pager">
+    <button class="button ghost" type="button" (click)="changePage(current.number - 1)" [disabled]="current.first">
+      Previous
+    </button>
+    <span>Page {{ current.number + 1 }} of {{ current.totalPages || 1 }}</span>
+    <button class="button ghost" type="button" (click)="changePage(current.number + 1)" [disabled]="current.last">
+      Next
+    </button>
+  </div>
+}

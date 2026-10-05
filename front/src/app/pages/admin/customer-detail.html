@@ -1,0 +1,51 @@
+<p class="eyebrow"><a routerLink="/admin/customers">Customers</a></p>
+
+@if (banner(); as text) {
+  <p class="banner warn" role="alert">{{ text }}</p>
+}
+@if (notice(); as text) {
+  <p class="banner ok" role="status">{{ text }}</p>
+}
+
+@if (loading()) {
+  <p class="hint">Loading customer…</p>
+} @else if (customer(); as person) {
+  <section class="page-head">
+    <div>
+      <h1>{{ person.name }}</h1>
+      <p class="hint">{{ person.email }}</p>
+    </div>
+    <span class="pill" [class.off]="!person.active">{{ person.active ? 'Active' : 'Inactive' }}</span>
+  </section>
+
+  <div class="split">
+    <section class="card stack">
+      <img class="avatar" [src]="person.photoUrl" [alt]="person.name" />
+      <dl class="facts">
+        <div><dt>Id</dt><dd>{{ person.id }}</dd></div>
+        <div><dt>Role</dt><dd>{{ person.role }}</dd></div>
+        <div><dt>Email verified</dt><dd>{{ person.emailVerified ? 'Yes' : 'No' }}</dd></div>
+        <div><dt>Created</dt><dd>{{ person.createdAt | date: 'medium' }}</dd></div>
+        <div><dt>Updated</dt><dd>{{ person.updatedAt | date: 'medium' }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="card stack">
+      <h2>Status</h2>
+      <p>Deactivate or reactivate this account. This does not call the signed-in customer delete endpoint.</p>
+      <button class="button" type="button" (click)="toggleStatus()" [disabled]="savingStatus()">
+        {{ savingStatus() ? 'Saving…' : (person.active ? 'Deactivate' : 'Reactivate') }}
+      </button>
+
+      <h2>Role</h2>
+      <label for="role">Role</label>
+      <select id="role" [value]="roleDraft()" (change)="onRoleChange($event)">
+        <option value="CUSTOMER">CUSTOMER</option>
+        <option value="ADMIN">ADMIN</option>
+      </select>
+      <button class="button ghost" type="button" (click)="saveRole()" [disabled]="savingRole()">
+        {{ savingRole() ? 'Saving…' : 'Update role' }}
+      </button>
+    </section>
+  </div>
+}

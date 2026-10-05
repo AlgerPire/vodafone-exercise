@@ -1,0 +1,89 @@
+<section class="split">
+  <div class="intro">
+    <p class="eyebrow">New customer</p>
+    <h1>Create an account</h1>
+    <p>
+      Registration does not sign you in, and the response does not include a token. Confirm the
+      email address before using Sign in.
+    </p>
+    <ul class="notes">
+      <li>The password is sent only to the registration API.</li>
+      <li>The photo is a URL. This form does not upload a file.</li>
+      <li>New accounts are customers. An administrator assigns the admin role later.</li>
+    </ul>
+  </div>
+
+  @if (success(); as message) {
+    <section class="card stack">
+      <h2>Confirm your email</h2>
+      <p class="banner ok">{{ message }}</p>
+      @if (verificationUrl(); as link) {
+        <p>Mail delivery is off on this machine. Confirm the address with the button below, then sign in.</p>
+        <div class="actions">
+          <a class="button" [href]="link">Confirm email</a>
+          <a class="button ghost" routerLink="/login">Sign in later</a>
+        </div>
+      } @else {
+        <p>A confirmation message is on its way. Open it on this computer and use the link, then sign in.</p>
+        <a class="button ghost" routerLink="/login">Sign in later</a>
+      }
+    </section>
+  } @else {
+    <form class="card stack" [formGroup]="form" novalidate (submit)="$event.preventDefault(); submit()">
+      <h2>Account details</h2>
+      @if (banner(); as text) {
+        <p class="banner warn" role="alert">{{ text }}</p>
+      }
+
+      <label for="name">Name</label>
+      <input id="name" type="text" formControlName="name" maxlength="160" autocomplete="name" />
+      @if (message('name'); as text) {
+        <p class="field-error" id="name-error">{{ text }}</p>
+      }
+
+      <label for="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        maxlength="320"
+        autocomplete="email"
+        spellcheck="false"
+      />
+      @if (message('email'); as text) {
+        <p class="field-error" id="email-error">{{ text }}</p>
+      }
+
+      <label for="password">Password</label>
+      <app-password-field
+        inputId="password"
+        formControlName="password"
+        autocomplete="new-password"
+        [minLength]="12"
+        [maxLength]="128"
+        [required]="true"
+      />
+      <p class="hint">12 to 128 characters.</p>
+      @if (message('password'); as text) {
+        <p class="field-error" id="password-error">{{ text }}</p>
+      }
+
+      <label for="photoUrl">Photo URL</label>
+      <input
+        id="photoUrl"
+        type="url"
+        formControlName="photoUrl"
+        maxlength="2048"
+        placeholder="https://example.com/photos/jane.jpg"
+        spellcheck="false"
+      />
+      @if (message('photoUrl'); as text) {
+        <p class="field-error" id="photoUrl-error">{{ text }}</p>
+      }
+
+      <button class="button" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Creating account…' : 'Create account' }}
+      </button>
+    </form>
+  }
+</section>

@@ -1,0 +1,11 @@
+<section class="card stack narrow">
+  <p class="eyebrow">Callback</p>
+  @if (error(); as text) {
+    <h1>Sign-in stopped</h1>
+    <p class="banner warn" role="alert">{{ text }}</p>
+    <a class="button" routerLink="/login">Back to sign in</a>
+  } @else {
+    <h1>Signing in</h1>
+    <p>Checking the authorization code and requesting tokens.</p>
+  }
+</section>

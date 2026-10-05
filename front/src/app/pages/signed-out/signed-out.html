@@ -1,0 +1,14 @@
+<section class="card stack narrow">
+  <p class="eyebrow">Session</p>
+  <h1>Signed out</h1>
+  @if (closed()) {
+    <p class="banner warn">
+      Your account has been deactivated. You cannot sign in until an administrator reactivates it.
+    </p>
+  }
+  <p>Your session in this application has been cleared.</p>
+  <div class="actions">
+    <a class="button" routerLink="/login">Sign in</a>
+    <a class="button ghost" routerLink="/register">Register</a>
+  </div>
+</section>

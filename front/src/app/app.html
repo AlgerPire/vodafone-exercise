@@ -1,0 +1,28 @@
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" [routerLink]="auth.signedIn() ? auth.homeUrl() : '/login'">
+      <span class="mark" aria-hidden="true"></span>
+      <span>
+        <strong>Customer Service</strong>
+        <small>Accounts</small>
+      </span>
+    </a>
+    <nav>
+      @if (auth.signedIn()) {
+        <a routerLink="/account" routerLinkActive="is-active">Dashboard</a>
+        @if (auth.admin()) {
+          <a routerLink="/admin/customers" routerLinkActive="is-active">Customers</a>
+        }
+        <span class="who">{{ auth.displayName() }}</span>
+        <button class="button ghost light" type="button" (click)="signOut()">Sign out</button>
+      } @else {
+        <a routerLink="/register" routerLinkActive="is-active">Register</a>
+        <a class="button light" routerLink="/login" routerLinkActive="is-active">Sign in</a>
+      }
+    </nav>
+    <p class="health" [attr.data-state]="health()">API {{ healthLabel() }}</p>
+  </header>
+  <main>
+    <router-outlet />
+  </main>
+</div>

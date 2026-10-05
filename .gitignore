@@ -1,0 +1,10 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Local secrets. back/.gitignore and front/.gitignore cover project build output.
+.env
+.env.*
+!.env.example
+*.local.yml
+application-local.yml

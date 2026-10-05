@@ -1,0 +1,30 @@
+<section class="confirm card">
+  @if (pending()) {
+    <p class="status-mark wait" aria-hidden="true"></p>
+    <p class="eyebrow">Customer Service</p>
+    <h1>Confirming your email</h1>
+    <p>This takes a moment. Keep this page open.</p>
+  } @else if (confirmed()) {
+    <p class="status-mark ok" aria-hidden="true">✓</p>
+    <p class="eyebrow">Account ready</p>
+    <h1>Email confirmed</h1>
+    <p>Your address is verified. Sign in with the email and password you chose when you registered.</p>
+    <a class="button" routerLink="/login">Continue to sign in</a>
+  } @else if (error(); as text) {
+    <p class="status-mark bad" aria-hidden="true">!</p>
+    <p class="eyebrow">Confirmation</p>
+    <h1>This link can’t be used</h1>
+    <p>{{ text }}</p>
+    <p class="hint">Links expire after 24 hours and can only be opened once.</p>
+    <div class="actions">
+      <a class="button" routerLink="/register">Register again</a>
+      <a class="button ghost" routerLink="/login">Sign in</a>
+    </div>
+  } @else {
+    <p class="status-mark wait" aria-hidden="true"></p>
+    <p class="eyebrow">Confirmation</p>
+    <h1>Check your email</h1>
+    <p>Open the confirmation link in the message we sent you. It brings you back here and activates your account.</p>
+    <a class="button ghost" routerLink="/login">Back to sign in</a>
+  }
+</section>
