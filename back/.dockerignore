@@ -5,3 +5,5 @@ target/
 .vscode/
 *.iml
 README.md
+application-local.yml
+*.local.yml

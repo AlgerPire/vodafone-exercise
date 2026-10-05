@@ -100,6 +100,54 @@ docker compose down
 
 `docker compose down` keeps the Postgres volume. Add `-v` only when you want to delete the local database.
 
+## Host the API on Railway
+
+The site at `https://vodafone.algerpire.dev` and the API are different origins. Railway serves only the API. The Angular app calls it directly.
+
+1. Push this project to GitHub.
+2. In Railway, create a project and add a PostgreSQL database.
+3. Add a service from the GitHub repo. Set **Root Directory** to `back`. Railway builds `back/Dockerfile`.
+4. Open the service, generate a public domain, and copy it. It looks like `https://something.up.railway.app`. Use that value with no trailing slash below.
+5. Set the variables in the next section, then deploy. The health check is `GET /actuator/health`.
+6. Before building the frontend, put that same domain in `front/src/environments/environment.production.ts` for both `apiBase` and `issuer`. Then run `npm run build` in `front` and host the `dist/spa/browser` files at `https://vodafone.algerpire.dev`.
+
+### Required variables
+
+| Variable | Value |
+| --- | --- |
+| `DB_HOST` | `${{Postgres.PGHOST}}` |
+| `DB_PORT` | `${{Postgres.PGPORT}}` |
+| `DB_NAME` | `${{Postgres.PGDATABASE}}` |
+| `DB_USERNAME` | `${{Postgres.PGUSER}}` |
+| `DB_PASSWORD` | `${{Postgres.PGPASSWORD}}` |
+| `APP_OAUTH2_ISSUER` | the Railway HTTPS domain, no trailing slash |
+| `APP_OAUTH2_REDIRECT_URI` | `https://vodafone.algerpire.dev/callback` |
+| `APP_CORS_ALLOWED_ORIGINS` | `https://vodafone.algerpire.dev` |
+| `APP_VERIFICATION_BASE_URL` | `https://vodafone.algerpire.dev/verify-email` |
+| `APP_COOKIE_SAME_SITE` | `none` |
+| `APP_COOKIE_SECURE` | `true` |
+| `APP_ADMIN_EMAIL` | the admin email you want to sign in with |
+| `APP_ADMIN_PASSWORD` | a password you choose for that admin |
+
+Railway sets `PORT` itself. Leave `DB_JDBC_PARAMS` empty when the API uses Railway's private database host.
+
+### Optional mail variables
+
+Leave these unset to keep mail off. Verification links are then written to the Railway logs. To send real mail, set `APP_MAIL_ENABLED` to `true` and provide the mailbox settings. Do not commit those values.
+
+| Variable | Example |
+| --- | --- |
+| `APP_MAIL_ENABLED` | `true` |
+| `APP_MAIL_FROM` | the from address |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USERNAME` | the mailbox username |
+| `SMTP_PASSWORD` | the mailbox app password |
+| `SMTP_AUTH` | `true` |
+| `SMTP_STARTTLS` | `true` |
+
+For port 465, set `SMTP_SSL` to `true` and `SMTP_STARTTLS` to `false`.
+
 ## Ports
 
 | What | URL |

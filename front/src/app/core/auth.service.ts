@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
+  apiUrl,
   AUTH,
   CODE_VERIFIER_KEY,
   OAUTH_STATE_KEY,
@@ -45,14 +46,14 @@ export class AuthService {
 
   async signInWithPassword(email: string, password: string): Promise<void> {
     const csrf = await this.ensureCsrfCookie();
-    const response = await fetch('/session-login', {
+    const response = await fetch(apiUrl('/session-login'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'application/json',
         'X-XSRF-TOKEN': csrf,
       },
-      credentials: 'same-origin',
+      credentials: 'include',
       body: new URLSearchParams({ username: email.trim(), password }),
     });
     if (response.status === 403) {
@@ -105,9 +106,10 @@ export class AuthService {
       client_id: AUTH.clientId,
       code_verifier: verifier,
     });
-    const response = await fetch('/oauth2/token', {
+    const response = await fetch(apiUrl('/oauth2/token'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'include',
       body,
     });
     if (!response.ok) {
@@ -130,17 +132,15 @@ export class AuthService {
 
   async signOut(): Promise<void> {
     const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY);
-    const csrf = readCookie('XSRF-TOKEN');
-    if (csrf) {
-      try {
-        await fetch('/session-logout', {
-          method: 'POST',
-          headers: { 'X-XSRF-TOKEN': csrf },
-          credentials: 'same-origin',
-        });
-      } catch {
-        // The local session is still cleared below.
-      }
+    try {
+      const csrf = await this.ensureCsrfCookie();
+      await fetch(apiUrl('/session-logout'), {
+        method: 'POST',
+        headers: { 'X-XSRF-TOKEN': csrf },
+        credentials: 'include',
+      });
+    } catch {
+      // The local session is still cleared below.
     }
     if (refreshToken) {
       const body = new URLSearchParams({
@@ -149,7 +149,7 @@ export class AuthService {
         client_id: AUTH.clientId,
       });
       try {
-        await fetch('/oauth2/revoke', {
+        await fetch(apiUrl('/oauth2/revoke'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body,
@@ -185,7 +185,7 @@ export class AuthService {
     });
     let response: Response;
     try {
-      response = await fetch('/oauth2/token', {
+      response = await fetch(apiUrl('/oauth2/token'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
@@ -246,7 +246,7 @@ export class AuthService {
     if (existing) {
       return existing;
     }
-    const response = await fetch('/csrf', { credentials: 'same-origin' });
+    const response = await fetch(apiUrl('/csrf'), { credentials: 'include' });
     if (response.ok) {
       try {
         const payload = (await response.json()) as { token?: string };

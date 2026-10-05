@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { apiUrl } from './config';
 import { AuthService } from './auth.service';
 import { ApiError, errorFromResponse } from './errors';
 
@@ -20,7 +21,7 @@ export class ApiClient {
 
     let response: Response;
     try {
-      response = await fetch(path, { ...init, headers });
+      response = await fetch(apiUrl(path), { ...init, headers, credentials: 'include' });
     } catch {
       throw new ApiError(0, {
         title: 'NETWORK',

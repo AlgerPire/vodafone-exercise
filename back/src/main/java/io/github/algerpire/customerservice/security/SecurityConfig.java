@@ -59,6 +59,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -99,8 +100,12 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
+    SecurityFilterChain apiSecurityFilterChain(HttpSecurity http,
+                                               JwtAuthenticationConverter jwtAuthenticationConverter,
+                                               @Value("${app.cookies.same-site:lax}") String sameSite,
+                                               @Value("${app.cookies.secure:false}") boolean secureCookies) throws Exception {
         CookieCsrfTokenRepository csrfTokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokens.setCookieCustomizer(cookie -> cookie.sameSite(sameSiteAttribute(sameSite)).secure(secureCookies));
         http
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
@@ -149,15 +154,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins:http://localhost:4200}") String allowedOrigins) {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    private static String sameSiteAttribute(String value) {
+        return switch (value.toLowerCase()) {
+            case "none" -> "None";
+            case "strict" -> "Strict";
+            default -> "Lax";
+        };
     }
 
     @Bean

@@ -1,10 +1,17 @@
-/** Public OAuth client. The browser stays on the Angular dev server. */
+import { environment } from '../../environments/environment';
+
+/** Public OAuth client. Local dev uses the Angular proxy; production calls the Railway API. */
 export const AUTH = {
-  issuer: 'http://localhost:4200',
-  clientId: 'presentation-client',
-  redirectUri: 'http://localhost:4200/callback',
+  issuer: environment.issuer,
+  clientId: environment.clientId,
+  redirectUri: environment.redirectUri,
   scopes: 'customer.read customer.write',
 } as const;
+
+export function apiUrl(path: string): string {
+  const base = environment.apiBase.replace(/\/$/, '');
+  return `${base}${path}`;
+}
 
 export const REFRESH_TOKEN_KEY = 'cs.refresh_token';
 export const CODE_VERIFIER_KEY = 'cs.code_verifier';
