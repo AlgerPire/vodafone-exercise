@@ -18,7 +18,7 @@
       <h2>Confirm your email</h2>
       <p class="banner ok">{{ message }}</p>
       @if (verificationUrl(); as link) {
-        <p>Mail delivery is off on this machine. Confirm the address with the button below, then sign in.</p>
+        <p>Confirm the address with the button below, then sign in.</p>
         <div class="actions">
           <a class="button" [href]="link">Confirm email</a>
           <a class="button ghost" routerLink="/login">Sign in later</a>

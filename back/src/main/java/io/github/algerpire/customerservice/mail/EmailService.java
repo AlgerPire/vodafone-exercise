@@ -1,10 +1,8 @@
 package io.github.algerpire.customerservice.mail;
 
-import io.github.algerpire.customerservice.common.error.ApiException;
 import io.github.algerpire.customerservice.config.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -40,9 +38,8 @@ public class EmailService implements VerificationMailer {
         try {
             mailSender.send(message);
         } catch (MailException ex) {
-            log.warn("Verification email failed for {}", recipientEmail, ex);
-            throw new ApiException(HttpStatus.BAD_GATEWAY, "MAIL_DELIVERY_FAILED",
-                    "The confirmation email could not be sent. Check the mailbox settings and try again.");
+            log.warn("Verification email failed for {} | verificationUrl={}", recipientEmail, verificationUrl, ex);
+            return verificationUrl;
         }
         return null;
     }
