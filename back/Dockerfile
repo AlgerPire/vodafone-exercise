@@ -11,4 +11,4 @@ RUN useradd --system --create-home --uid 10001 appuser
 COPY --from=build /app/target/customer-service-1.0.0.jar app.jar
 USER appuser
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

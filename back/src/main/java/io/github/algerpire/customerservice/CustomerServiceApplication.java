@@ -11,6 +11,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class CustomerServiceApplication {
 
     public static void main(String[] args) {
+        // Gmail SMTP publishes IPv6 addresses. Railway containers often have no IPv6 route,
+        // so the connection hangs until the timeout instead of using IPv4.
+        System.setProperty("java.net.preferIPv4Stack", "true");
         SpringApplication.run(CustomerServiceApplication.class, args);
     }
 }
