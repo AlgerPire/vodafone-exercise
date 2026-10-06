@@ -13,6 +13,11 @@ export function apiUrl(path: string): string {
   return `${base}${path}`;
 }
 
+/** Production calls Railway directly. Local dev stays on the Angular proxy. */
+export function usesRemoteApi(): boolean {
+  return environment.apiBase.length > 0;
+}
+
 export const REFRESH_TOKEN_KEY = 'cs.refresh_token';
 export const CODE_VERIFIER_KEY = 'cs.code_verifier';
 export const OAUTH_STATE_KEY = 'cs.oauth_state';

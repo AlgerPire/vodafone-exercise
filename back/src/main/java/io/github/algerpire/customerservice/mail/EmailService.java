@@ -1,8 +1,11 @@
 package io.github.algerpire.customerservice.mail;
 
+import io.github.algerpire.customerservice.common.error.ApiException;
 import io.github.algerpire.customerservice.config.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -34,7 +37,13 @@ public class EmailService implements VerificationMailer {
         message.setSubject("Confirm your Customer Service account");
         message.setText("Hello " + recipientName + ",\n\nConfirm your email address using this link:\n"
                 + verificationUrl + "\n\nThe link expires in 24 hours.");
-        mailSender.send(message);
+        try {
+            mailSender.send(message);
+        } catch (MailException ex) {
+            log.warn("Verification email failed for {}", recipientEmail, ex);
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "MAIL_DELIVERY_FAILED",
+                    "The confirmation email could not be sent. Check the mailbox settings and try again.");
+        }
         return null;
     }
 }

@@ -7,6 +7,7 @@ import {
   OAUTH_STATE_KEY,
   REFRESH_SKEW_MS,
   REFRESH_TOKEN_KEY,
+  usesRemoteApi,
 } from './config';
 import { errorFromResponse } from './errors';
 import { AccessTokenClaims, TokenResponse } from './models';
@@ -45,6 +46,10 @@ export class AuthService {
   }
 
   async signInWithPassword(email: string, password: string): Promise<void> {
+    if (usesRemoteApi()) {
+      submitRemoteLogin(email.trim(), password, await this.createAuthorizeUrl());
+      return;
+    }
     const csrf = await this.ensureCsrfCookie();
     const response = await fetch(apiUrl('/session-login'), {
       method: 'POST',
@@ -75,6 +80,10 @@ export class AuthService {
   }
 
   async beginSignIn(navigate: (url: string) => void = assignBrowserLocation): Promise<void> {
+    navigate(await this.createAuthorizeUrl());
+  }
+
+  private async createAuthorizeUrl(): Promise<string> {
     const verifier = randomUnreserved(64);
     const state = randomUnreserved(43);
     sessionStorage.setItem(CODE_VERIFIER_KEY, verifier);
@@ -88,7 +97,7 @@ export class AuthService {
     url.searchParams.set('code_challenge', challenge);
     url.searchParams.set('code_challenge_method', 'S256');
     url.searchParams.set('state', state);
-    navigate(url.toString());
+    return url.toString();
   }
 
   async completeSignIn(code: string, state: string): Promise<void> {
@@ -272,6 +281,25 @@ function readCookie(name: string): string | null {
     return null;
   }
   return decodeURIComponent(match.slice(prefix.length));
+}
+
+function submitRemoteLogin(email: string, password: string, redirect: string): void {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = apiUrl('/session-login');
+  for (const [name, value] of [
+    ['username', email],
+    ['password', password],
+    ['redirect', redirect],
+  ] as const) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
 }
 
 function assignBrowserLocation(url: string): void {

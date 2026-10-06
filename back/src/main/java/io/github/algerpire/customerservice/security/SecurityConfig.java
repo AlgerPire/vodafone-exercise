@@ -13,6 +13,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AccountExpiredException;
@@ -40,6 +41,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
@@ -58,9 +60,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -103,7 +107,10 @@ public class SecurityConfig {
     SecurityFilterChain apiSecurityFilterChain(HttpSecurity http,
                                                JwtAuthenticationConverter jwtAuthenticationConverter,
                                                @Value("${app.cookies.same-site:lax}") String sameSite,
-                                               @Value("${app.cookies.secure:false}") boolean secureCookies) throws Exception {
+                                               @Value("${app.cookies.secure:false}") boolean secureCookies,
+                                               @Value("${app.cors.allowed-origins:http://localhost:4200}") String allowedOrigins,
+                                               @Value("${app.oauth2.issuer:http://localhost:4200}") String issuer) throws Exception {
+        List<String> origins = allowedOriginList(allowedOrigins);
         CookieCsrfTokenRepository csrfTokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrfTokens.setCookieCustomizer(cookie -> cookie.sameSite(sameSiteAttribute(sameSite)).secure(secureCookies));
         http
@@ -120,13 +127,24 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/session-login")
-                        .successHandler((request, response, authentication) ->
-                                writeJson(response, HttpServletResponse.SC_OK, "Signed in."))
+                        .successHandler((request, response, authentication) -> {
+                            String redirect = request.getParameter("redirect");
+                            if (isAuthorizeRedirect(redirect, issuer)) {
+                                response.sendRedirect(redirect);
+                                return;
+                            }
+                            writeJson(response, HttpServletResponse.SC_OK, "Signed in.");
+                        })
                         .failureHandler((request, response, exception) -> {
                             boolean inactive = exception instanceof DisabledException
                                     || exception instanceof LockedException
                                     || exception instanceof AccountExpiredException
                                     || exception instanceof CredentialsExpiredException;
+                            if (request.getParameter("redirect") != null) {
+                                String reason = inactive ? "inactive" : "rejected";
+                                response.sendRedirect(request.getHeader(HttpHeaders.ORIGIN) + "/login?reason=" + reason);
+                                return;
+                            }
                             String detail = inactive
                                     ? "Confirm your email before signing in, or ask an administrator to reactivate the account."
                                     : "Email or password is incorrect.";
@@ -140,7 +158,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfTokens)
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
-                        .ignoringRequestMatchers("/api/**"))
+                        .ignoringRequestMatchers("/api/**", "/session-login", "/session-logout"))
+                .addFilterBefore(new LoginOriginFilter(Set.copyOf(origins)), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class);
         return http.build();
     }
@@ -167,6 +186,42 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    private static List<String> allowedOriginList(String allowedOrigins) {
+        return Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+    }
+
+    private static boolean isAuthorizeRedirect(String redirect, String issuer) {
+        if (!StringUtils.hasText(redirect)) {
+            return false;
+        }
+        try {
+            URI target = URI.create(redirect);
+            URI allowed = URI.create(issuer);
+            return sameOrigin(target, allowed) && "/oauth2/authorize".equals(target.getPath());
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private static boolean sameOrigin(URI left, URI right) {
+        if (left.getScheme() == null || right.getScheme() == null || left.getHost() == null || right.getHost() == null) {
+            return false;
+        }
+        return left.getScheme().equalsIgnoreCase(right.getScheme())
+                && left.getHost().equalsIgnoreCase(right.getHost())
+                && normalizedPort(left) == normalizedPort(right);
+    }
+
+    private static int normalizedPort(URI uri) {
+        if (uri.getPort() != -1) {
+            return uri.getPort();
+        }
+        return "https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80;
     }
 
     private static String sameSiteAttribute(String value) {
@@ -257,6 +312,34 @@ public class SecurityConfig {
                 return super.resolveCsrfTokenValue(request, csrfToken);
             }
             return this.delegate.resolveCsrfTokenValue(request, csrfToken);
+        }
+    }
+
+    /**
+     * Browser login posts from the hosted site cannot echo the API's CSRF cookie.
+     * Accept those posts only from a configured frontend origin.
+     */
+    private static final class LoginOriginFilter extends OncePerRequestFilter {
+        private final Set<String> allowedOrigins;
+
+        private LoginOriginFilter(Set<String> allowedOrigins) {
+            this.allowedOrigins = allowedOrigins;
+        }
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
+            String path = request.getServletPath();
+            boolean browserLogin = "POST".equalsIgnoreCase(request.getMethod())
+                    && ("/session-login".equals(path) || "/session-logout".equals(path));
+            if (browserLogin) {
+                String origin = request.getHeader(HttpHeaders.ORIGIN);
+                if (origin == null || !allowedOrigins.contains(origin)) {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    return;
+                }
+            }
+            filterChain.doFilter(request, response);
         }
     }
 

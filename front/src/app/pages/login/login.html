@@ -6,6 +6,12 @@
   @if (reason() === 'session-ended') {
     <p class="banner warn" role="status">Your session ended. Sign in again.</p>
   }
+  @if (reason() === 'rejected') {
+    <p class="banner warn" role="alert">Email or password is incorrect.</p>
+  }
+  @if (reason() === 'inactive') {
+    <p class="banner warn" role="alert">Confirm your email before signing in, or ask an administrator to reactivate the account.</p>
+  }
   @if (error(); as text) {
     <p class="banner warn" role="alert">{{ text }}</p>
   }
